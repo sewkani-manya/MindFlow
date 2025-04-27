@@ -50,6 +50,24 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MindFlowScreen() {
     var text by remember { mutableStateOf("") }
+    var isTextFieldEnabled by remember { mutableStateOf(false) }
+    var isTimerRunning by remember {mutableStateOf(false)}
+    fun onTimerStart() {
+        isTextFieldEnabled = true
+        isTimerRunning = true
+    }
+
+    fun onTimerPause() {
+        isTimerRunning = false
+        isTextFieldEnabled= false
+    }
+
+    fun onTimerReset() {
+        isTimerRunning = false
+        isTextFieldEnabled = false
+        text= ""
+    }
+
     Surface(color = LightBackground, modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.padding(bottom = 16.dp),
@@ -62,12 +80,17 @@ fun MindFlowScreen() {
             )
             CountdownTimer(
                 totalTime = 300,
+                isRunning = isTimerRunning,
+                onStart = {onTimerStart()},
+                onPause = {onTimerPause()},
+                onReset= {onTimerReset()},
                 modifier = Modifier.padding( bottom=24.dp),
             )
             TextField(
                 value = text,
                 onValueChange = { text = it },
                 placeholder = { Text("Start writing...") },
+                enabled = isTextFieldEnabled,
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -92,18 +115,19 @@ fun MindFlowScreen() {
 @Composable
 fun CountdownTimer(
     totalTime: Int = 300,
-    modifier: Modifier = Modifier
+    isRunning: Boolean,
+    onStart: () -> Unit,
+    onPause: () -> Unit,
+    onReset: () -> Unit,
+    modifier: Modifier = Modifier,
+
 ) {
     var timeLeft by remember { mutableStateOf(totalTime) }
-    var isRunning by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = isRunning, key2 = timeLeft) {
         if (isRunning && timeLeft > 0) {
             delay(1000L)
             timeLeft -= 1
-        } else if (timeLeft == 0) {
-            isRunning = false
-            // Optional: you can add a sound/vibration here using Android APIs
         }
     }
 
@@ -125,20 +149,20 @@ fun CountdownTimer(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Button(
-                onClick = { isRunning = true },
+                onClick = { onStart()},
                 enabled = !isRunning // Disable Start if already running
             ) {
                 Text("Start")
             }
             Button(
-                onClick = { isRunning = false },
+                onClick = { onPause() },
                 enabled = isRunning // Disable Pause if already paused
             ) {
                 Text("Pause")
             }
             Button(
                 onClick = {
-                    isRunning = false
+                    onReset()
                     timeLeft = totalTime
                 }
             ) {
